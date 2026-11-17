@@ -1453,7 +1453,7 @@
                 const desc = p.Descripcion || p.desc;
                 const whatsapp = p.WhatsApp || p.whatsapp;
                 const web = p.Web_Catalogo || p.web || "";
-
+const urlGps = obtenerUrlGps(p);
                 const calsPuesto = calificacionesBD.filter(c => String(c.Puesto_ID || c.puestoId) === String(id));
                 const totalCals = calsPuesto.length;
                 let avgStars = 0;
@@ -1509,8 +1509,17 @@
                             </div>
                             <div class="grid grid-cols-3 gap-1">
                                 <a href="${web || '#'}" target="_blank" class="h-8 bg-red-600 hover:bg-red-700 text-white flex items-center justify-center rounded transition" title="Web"><i class="fa-solid fa-globe text-lg"></i></a>
-                                <a href="https://maps.google.com/?q=${encodeURIComponent(nombre + ' Piura')}" target="_blank" class="h-8 bg-black hover:bg-gray-800 text-white flex items-center justify-center rounded transition" title="GPS"><i class="fa-solid fa-location-dot text-lg"></i></a>
-                                <a href="https://wa.me/${whatsapp}?text=Hola,%20vi%20tu%20puesto%20en%20MERCATON%20Piura" target="_blank" class="h-8 bg-brand-whatsapp hover:bg-emerald-600 text-white flex items-center justify-center rounded transition" title="WhatsApp"><i class="fa-brands fa-whatsapp text-xl"></i></a>
+${urlGps
+    ? `<a href="${urlGps}" target="_blank" rel="noopener noreferrer"
+        class="h-8 bg-black hover:bg-gray-800 text-white flex items-center justify-center rounded transition"
+        title="Ver ubicación GPS exacta">
+        <i class="fa-solid fa-location-dot text-lg"></i>
+       </a>`
+    : `<span class="h-8 bg-gray-300 text-gray-500 flex items-center justify-center rounded"
+        title="Este puesto todavía no tiene coordenadas GPS">
+        <i class="fa-solid fa-location-dot text-lg"></i>
+       </span>`
+}                                <a href="https://wa.me/${whatsapp}?text=Hola,%20vi%20tu%20puesto%20en%20MERCATON%20Piura" target="_blank" class="h-8 bg-brand-whatsapp hover:bg-emerald-600 text-white flex items-center justify-center rounded transition" title="WhatsApp"><i class="fa-brands fa-whatsapp text-xl"></i></a>
                             </div>
                         </div>
                     </div>
@@ -1588,6 +1597,7 @@
                     const desc = f.Descripcion || f.desc || '';
                     const whatsapp = f.WhatsApp || f.whatsapp;
                     const web = f.Web_Catalogo || f.web || "";
+                    const urlGps = obtenerUrlGps(f);
 
                     const calsPuesto = calificacionesBD.filter(c => String(c.Puesto_ID || c.puestoId) === String(id));
                     const totalCals = calsPuesto.length;
@@ -1820,18 +1830,48 @@
             }
         }
 
-        function detectarGpsRegistro() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition((pos) => {
-                    const lat = pos.coords.latitude.toFixed(6);
-                    const lon = pos.coords.longitude.toFixed(6);
-                    document.getElementById('regGps').value = `${lat}, ${lon}`;
-                    mostrarToast("¡Ubicación GPS detectada!");
-                }, () => { mostrarToast("No se pudo obtener la ubicación GPS."); });
-            } else {
-                mostrarToast("Geolocalización no soportada.");
+        
+function detectarGpsRegistro() {
+    if (!navigator.geolocation) {
+        mostrarToast("Tu navegador no soporta la ubicación GPS.");
+        return;
+    }
+
+    mostrarToast("Detectando ubicación GPS...");
+
+    navigator.geolocation.getCurrentPosition(
+        (pos) => {
+            const lat = pos.coords.latitude;
+            const lon = pos.coords.longitude;
+            const precision = Math.round(pos.coords.accuracy);
+
+            document.getElementById('regGps').value =
+                `${lat.toFixed(7)}, ${lon.toFixed(7)}`;
+
+            mostrarToast(
+                `Ubicación detectada. Precisión aproximada: ${precision} metros.`
+            );
+        },
+        (error) => {
+            let mensaje = "No se pudo obtener la ubicación GPS.";
+
+            if (error.code === 1) {
+                mensaje = "Debes permitir el acceso a tu ubicación.";
+            } else if (error.code === 2) {
+                mensaje = "No se pudo determinar tu ubicación.";
+            } else if (error.code === 3) {
+                mensaje = "Se agotó el tiempo para detectar tu ubicación.";
             }
+
+            mostrarToast(mensaje);
+        },
+        {
+            enableHighAccuracy: true,
+            timeout: 20000,
+            maximumAge: 0
         }
+    );
+}
 
         function guardarUbicacion() {
             ubicacionActual = {
@@ -1859,6 +1899,32 @@
             }
             document.getElementById('modalAuth').classList.remove('hidden');
         }
+
+function obtenerUrlGps(puesto) {
+    // Leer las coordenadas guardadas en el puesto
+    const gps = String(puesto.GPS || puesto.gps || "").trim();
+
+    if (!gps) return null;
+
+    // Aceptar coordenadas en formato: -5.0892, -81.1145
+    const partes = gps.split(",");
+    if (partes.length !== 2) return null;
+
+    const lat = Number(partes[0].trim());
+    const lon = Number(partes[1].trim());
+
+    // Validar coordenadas
+    if (
+        !Number.isFinite(lat) ||
+        !Number.isFinite(lon) ||
+        lat < -90 || lat > 90 ||
+        lon < -180 || lon > 180
+    ) {
+        return null;
+    }
+
+    return `https://www.google.com/maps?q=${lat},${lon}`;
+}
 
         async function loginDirecto(e) {
             e.preventDefault();
