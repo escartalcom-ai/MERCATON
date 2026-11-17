@@ -3013,7 +3013,10 @@ if (periodo === 'personalizado' && !filtroFecha.valido) {
                     return matchQuery && matchFecha;
                 });
 
-                filtrados.sort((a, b) => parsearFechaSegura(a.Fecha_Registro || a.fecha) - parsearFechaSegura(b.Fecha_Registro || b.fecha));
+                filtrados.sort((a, b) =>
+    (parsearFechaCeo(a.Fecha_Registro || a.fecha)?.getTime() || 0) -
+    (parsearFechaCeo(b.Fecha_Registro || b.fecha)?.getTime() || 0)
+);
                 let conIndices = filtrados.map((item, originalIndex) => ({ item, num: originalIndex + 1 }));
                 conIndices.reverse();
 
@@ -3052,7 +3055,10 @@ if (periodo === 'personalizado' && !filtroFecha.valido) {
                     return matchQuery && matchFecha;
                 });
 
-                filtradasCals.sort((a, b) => parsearFechaSegura(a.Fecha_Hora || a.fecha) - parsearFechaSegura(b.Fecha_Hora || b.fecha));
+                filtradasCals.sort((a, b) =>
+    (parsearFechaCeo(a.Fecha_Hora || a.fecha)?.getTime() || 0) -
+    (parsearFechaCeo(b.Fecha_Hora || b.fecha)?.getTime() || 0)
+);
                 let conIndices = filtradasCals.map((item, originalIndex) => ({ item, num: originalIndex + 1 }));
                 conIndices.reverse();
 
