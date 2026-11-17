@@ -2709,6 +2709,206 @@
             renderCeoTable();
         }
 
+// ==========================================
+// FILTRO DE FECHAS DEL PANEL CEO
+// ==========================================
+
+function parsearFechaCeo(valor) {
+    if (!valor) return null;
+
+    // Compatibilidad con objetos Date
+    if (valor instanceof Date) {
+        return isNaN(valor.getTime()) ? null : valor;
+    }
+
+    // Compatibilidad con Timestamp de Firebase
+    if (typeof valor === 'object' && typeof valor.toDate === 'function') {
+        const fecha = valor.toDate();
+        return isNaN(fecha.getTime()) ? null : fecha;
+    }
+
+    // Compatibilidad con timestamps numéricos
+    if (typeof valor === 'number') {
+        const fecha = new Date(valor);
+        return isNaN(fecha.getTime()) ? null : fecha;
+    }
+
+    const str = String(valor).trim();
+    if (!str) return null;
+
+    // Formato peruano: DD/MM/YYYY HH:mm
+    const pe = str.match(
+        /^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:[,\s]+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(a\.?\s*m\.?|p\.?\s*m\.?|am|pm)?)?$/i
+    );
+
+    if (pe) {
+        const dia = Number(pe[1]);
+        const mes = Number(pe[2]);
+        const anio = Number(pe[3]);
+
+        let hora = Number(pe[4] || 0);
+        const minuto = Number(pe[5] || 0);
+        const segundo = Number(pe[6] || 0);
+
+        const meridiano = (pe[7] || '')
+            .toLowerCase()
+            .replace(/[\s.]/g, '');
+
+        if (meridiano === 'pm' && hora < 12) hora += 12;
+        if (meridiano === 'am' && hora === 12) hora = 0;
+
+        const fecha = new Date(
+            anio, mes - 1, dia, hora, minuto, segundo
+        );
+
+        // Evitar fechas inexistentes como 31/02/2026
+        if (
+            fecha.getFullYear() !== anio ||
+            fecha.getMonth() !== mes - 1 ||
+            fecha.getDate() !== dia ||
+            hora > 23 || minuto > 59 || segundo > 59
+        ) return null;
+
+        return fecha;
+    }
+
+    // ISO 8601 y formatos compatibles
+    const fecha = new Date(str);
+
+    return isNaN(fecha.getTime()) ? null : fecha;
+}
+
+
+// Construir fechas locales sin problemas de UTC
+function crearFechaCeo(anio, mes, dia, finDia = false) {
+    const fecha = new Date(anio, mes - 1, dia);
+
+    if (
+        fecha.getFullYear() !== anio ||
+        fecha.getMonth() !== mes - 1 ||
+        fecha.getDate() !== dia
+    ) return null;
+
+    if (finDia) {
+        fecha.setHours(23, 59, 59, 999);
+    } else {
+        fecha.setHours(0, 0, 0, 0);
+    }
+
+    return fecha;
+}
+
+
+// ==========================================
+// APLICAR FILTRO DE PERIODO CEO
+// ==========================================
+
+function obtenerFiltroFechaCeo(periodo) {
+    const ahora = new Date();
+
+    const inicioHoy = new Date(
+        ahora.getFullYear(),
+        ahora.getMonth(),
+        ahora.getDate()
+    );
+
+    const finHoy = new Date(inicioHoy);
+    finHoy.setDate(finHoy.getDate() + 1);
+
+    switch (periodo) {
+
+        case 'historial':
+            return { inicio: null, fin: null, valido: true };
+
+        case 'dia':
+            return {
+                inicio: inicioHoy,
+                fin: finHoy,
+                valido: true
+            };
+
+        case 'semana': {
+            // Semana calendario: lunes a lunes
+            const inicio = new Date(inicioHoy);
+            const diaSemana = (inicio.getDay() + 6) % 7;
+            inicio.setDate(inicio.getDate() - diaSemana);
+
+            const fin = new Date(inicio);
+            fin.setDate(fin.getDate() + 7);
+
+            return { inicio, fin, valido: true };
+        }
+
+        case 'mes': {
+            const inicio = new Date(
+                ahora.getFullYear(),
+                ahora.getMonth(),
+                1
+            );
+
+            const fin = new Date(
+                ahora.getFullYear(),
+                ahora.getMonth() + 1,
+                1
+            );
+
+            return { inicio, fin, valido: true };
+        }
+
+        case 'anio': {
+            const inicio = new Date(
+                ahora.getFullYear(), 0, 1
+            );
+
+            const fin = new Date(
+                ahora.getFullYear() + 1, 0, 1
+            );
+
+            return { inicio, fin, valido: true };
+        }
+
+        case 'personalizado': {
+            const iD = Number(document.getElementById('ceoIniDia').value);
+            const iM = Number(document.getElementById('ceoIniMes').value);
+            const iA = Number(document.getElementById('ceoIniAnio').value);
+
+            const fD = Number(document.getElementById('ceoFinDia').value);
+            const fM = Number(document.getElementById('ceoFinMes').value);
+            const fA = Number(document.getElementById('ceoFinAnio').value);
+
+            const inicio = crearFechaCeo(iA, iM, iD);
+            const fin = crearFechaCeo(fA, fM, fD, true);
+
+            if (!inicio || !fin || inicio > fin) {
+                return {
+                    inicio: null,
+                    fin: null,
+                    valido: false
+                };
+            }
+
+            return { inicio, fin, valido: true };
+        }
+
+        default:
+            return { inicio: null, fin: null, valido: true };
+    }
+}
+
+
+function filtrarFechaCeo(fechaRegistro, filtro) {
+    if (!filtro.valido) return false;
+
+    if (!filtro.inicio && !filtro.fin) return true;
+
+    const fecha = parsearFechaCeo(fechaRegistro);
+
+    // Los registros sin fecha válida no deben aparecer
+    // en filtros temporales.
+    if (!fecha) return false;
+
+    return fecha >= filtro.inicio && fecha < filtro.fin;
+}
         // --- RENDER CEO TABLE (ORDENAMIENTO INVERSO SOLICITADO: 3 SOBRE 2, 2 SOBRE 1, 1ERO ABAJO) ---
         function renderCeoTable() {
             document.getElementById('ceoCantPuestos').innerText = puestosBD.length;
@@ -2720,47 +2920,38 @@
             if (!tbody || !thead) return;
             tbody.innerHTML = '';
 
-            const queryCeo = document.getElementById('inputBusquedaCeo')?.value.toLowerCase() || '';
-            const periodo = document.getElementById('filtroPeriodoCeo')?.value || 'historial';
-            
-            const rangoContainer = document.getElementById('rangoPersonalizadoCeoContainer');
-            let fechaIni = null;
-            let fechaFin = null;
+           
+const queryCeo = (
+    document.getElementById('inputBusquedaCeo')?.value || ''
+).toLowerCase().trim();
 
-            if (periodo === 'personalizado') {
-                if(rangoContainer) rangoContainer.classList.remove('hidden');
-                const iD = document.getElementById('ceoIniDia')?.value || '01';
-                const iM = document.getElementById('ceoIniMes')?.value || '01';
-                const iA = document.getElementById('ceoIniAnio')?.value || '2024';
-                const fD = document.getElementById('ceoFinDia')?.value || '31';
-                const fM = document.getElementById('ceoFinMes')?.value || '12';
-                const fA = document.getElementById('ceoFinAnio')?.value || '2026';
-                fechaIni = new Date(parseInt(iA), parseInt(iM) - 1, parseInt(iD), 0, 0, 0);
-                fechaFin = new Date(parseInt(fA), parseInt(fM) - 1, parseInt(fD), 23, 59, 59);
-            } else {
-                if(rangoContainer) rangoContainer.classList.add('hidden');
-            }
+const periodo = document.getElementById('filtroPeriodoCeo')?.value || 'historial';
 
-            const filtrarPorFecha = (fechaStr) => {
-                if (!fechaStr || periodo === 'historial') return true;
-                const d = parsearFechaSegura(fechaStr);
-                if (isNaN(d.getTime())) return true;
-                const ahora = new Date();
+const rangoContainer = document.getElementById('rangoPersonalizadoCeoContainer');
 
-                if (periodo === 'dia') {
-                    return d.toDateString() === ahora.toDateString();
-                } else if (periodo === 'semana') {
-                    const sieteDiasMs = 7 * 24 * 60 * 60 * 1000;
-                    return (ahora - d) <= sieteDiasMs && d <= ahora;
-                } else if (periodo === 'mes') {
-                    return d.getMonth() === ahora.getMonth() && d.getFullYear() === ahora.getFullYear();
-                } else if (periodo === 'anio') {
-                    return d.getFullYear() === ahora.getFullYear();
-                } else if (periodo === 'personalizado') {
-                    if (fechaIni && fechaFin) return d >= fechaIni && d <= fechaFin;
-                }
-                return true;
-            };
+if (rangoContainer) {
+    rangoContainer.classList.toggle('hidden', periodo !== 'personalizado');
+}
+
+const filtroFecha = obtenerFiltroFechaCeo(periodo);
+
+const filtrarPorFecha = (fechaStr) => {
+    return filtrarFechaCeo(fechaStr, filtroFecha);
+};
+
+// Avisar si el rango personalizado es incorrecto
+if (periodo === 'personalizado' && !filtroFecha.valido) {
+    tbody.innerHTML = `
+        <tr>
+            <td colspan="5" class="p-5 text-center text-red-600 font-semibold">
+                <i class="fa-solid fa-triangle-exclamation mr-1"></i>
+                Selecciona un rango de fechas válido.
+                La fecha inicial no puede ser posterior a la fecha final.
+            </td>
+        </tr>
+    `;
+    return;
+}
 
             if (ceoTabActual === 'mercaderos') {
                 thead.innerHTML = `
@@ -2780,7 +2971,10 @@
                 });
 
                 // Ordenar ascendente por fecha/ID y mapear número original (1, 2, 3...)
-                filtrados.sort((a, b) => parsearFechaSegura(a.Fecha_Registro || a.fecha) - parsearFechaSegura(b.Fecha_Registro || b.fecha));
+                filtrados.sort((a, b) =>
+    (parsearFechaCeo(a.Fecha_Registro || a.fecha)?.getTime() || 0) -
+    (parsearFechaCeo(b.Fecha_Registro || b.fecha)?.getTime() || 0)
+);
                 let conIndices = filtrados.map((item, originalIndex) => ({ item, num: originalIndex + 1 }));
                 // Invertir para que el 3 esté sobre el 2, el 2 sobre el 1, y el 1 (1er registrado) quede abajo
                 conIndices.reverse();
