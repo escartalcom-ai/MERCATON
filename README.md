@@ -1,4 +1,4 @@
-# Mercatodon — Fase 1
+# Mercaton — Fase 1
 
 Frontend responsive construido con React + Vite + iconos oficiales de marcas mediante react-icons, preparado para Vercel y GitHub.
 
