@@ -1252,7 +1252,7 @@
             try {
                 if (navigator.share) {
                     await navigator.share({ title: `${nombre} | MERCATON`, text: texto, url });
-                    mostrarToast('Tarjeta compartida. En WhatsApp puedes elegir un chat o Mi estado si está disponible.');
+                    mostrarToast('Tarjeta compartida para tus redes.');
                     return;
                 }
                 if (navigator.clipboard?.writeText) {
