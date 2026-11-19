@@ -645,7 +645,7 @@
                     <div>
                         <label class="text-xs font-semibold text-gray-700">Rubro Principal *</label>
                         <select id="regPuestoRubro" class="w-full border rounded-xl p-2 text-xs outline-none bg-white">
-                            <option value="Alimentos">Alimentos</option><option value="Bebidas">Bebidas</option><option value="Carnes">Carnes</option><option value="Pescados">Pescados</option><option value="Frutas">Frutas</option><option value="Regionales">Regionales</option><option value="Gastronomía">Gastronomía</option><option value="Panadería">Panadería</option><option value="Lácteos">Lácteos</option><option value="Salud">Salud</option><option value="Belleza">Belleza</option><option value="Moda">Moda</option><option value="Tecnología">Tecnología</option><option value="Hogar">Hogar</option><option value="Ferretería">Ferretería</option><option value="Limpieza">Limpieza</option><option value="Mascotas">Mascotas</option><option value="Librería">Librería</option><option value="Servicios">Servicios</option><option value="Otros">Otros</option>
+                            <option value="Alimentos">Alimentos</option><option value="Bebidas">Bebidas</option><option value="Carnes">Carnes</option><option value="Pescados">Pescados</option><option value="Frutas">Frutas</option><option value="Regionales">Regionales</option><option value="Comida">Comida</option><option value="Panadería">Panadería</option><option value="Lácteos">Lácteos</option><option value="Salud">Salud</option><option value="Belleza">Belleza</option><option value="Moda">Moda</option><option value="Tecnología">Tecnología</option><option value="Hogar">Hogar</option><option value="Ferretería">Ferretería</option><option value="Limpieza">Limpieza</option><option value="Mascotas">Mascotas</option><option value="Librería">Librería</option><option value="Servicios">Servicios</option><option value="Otros">Otros</option>
                         </select>
                     </div>
                     <div>
@@ -861,7 +861,7 @@
             { nombre: "Pescados", icon: "fa-fish" },
             { nombre: "Frutas", icon: "fa-apple-whole" },
             { nombre: "Regionales", icon: "fa-location-dot" },
-            { nombre: "Gastronomía", icon: "fa-bowl-food" },
+            { nombre: "Comida", icon: "fa-bowl-food" },
             { nombre: "Panadería", icon: "fa-bread-slice" },
             { nombre: "Lácteos", icon: "fa-cheese" },
             { nombre: "Salud", icon: "fa-heart-pulse" },
@@ -2623,7 +2623,7 @@ function obtenerUrlGps(puesto) {
             
             let calificacionesPuesto = calificacionesBD.filter(c => String(c.Puesto_ID || c.puestoId) === String(puestoId));
 
-            const rubrosOpciones = ["Alimentos", "Bebidas", "Carnes", "Pescados", "Frutas", "Regionales", "Gastronomía", "Panadería", "Lácteos", "Salud", "Belleza", "Moda", "Tecnología", "Hogar", "Ferretería", "Limpieza", "Mascotas", "Librería", "Servicios", "Otros"];
+            const rubrosOpciones = ["Alimentos", "Bebidas", "Carnes", "Pescados", "Frutas", "Regionales", "Comida", "Panadería", "Lácteos", "Salud", "Belleza", "Moda", "Tecnología", "Hogar", "Ferretería", "Limpieza", "Mascotas", "Librería", "Servicios", "Otros"];
             const rubroActual = puesto.Rubro || puesto.rubro || "Alimentos";
             let optionsHtml = rubrosOpciones.map(r => `<option value="${r}" ${r === rubroActual ? 'selected' : ''}>${r}</option>`).join('');
 
