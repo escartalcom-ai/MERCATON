@@ -1731,8 +1731,11 @@
                 );
                 const texto = [p.Nombre_Puesto,p.Rubro,p.Descripcion,p.Distrito,p.Provincia,p.Region,p.Duenio_Nombre,p.Correo_Acceso,p.WhatsApp,p.Verificado,p.Oficial].join(' ').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
                 if (buscarEstrellas) return ratingMatch;
-                return !query || texto.includes(q) || (q === 'oficial' && puestoEstaOficial(p));
-            });
+if (q === 'oficial') {
+    return puestoEstaOficial(p);
+}
+
+return !query || texto.includes(q);            });
             renderPuestos(res);
         }
         function verInicio() {
