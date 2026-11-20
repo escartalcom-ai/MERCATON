@@ -1729,7 +1729,7 @@
                 const ratingMatch = buscarEstrellas && (
                     estrellasBuscadas === 0 ? estrellas.length === 0 : Math.round(promedio) === estrellasBuscadas
                 );
-                const texto = [p.Nombre_Puesto,p.Rubro,p.Descripcion,p.Distrito,p.Provincia,p.Region,p.Duenio_Nombre,p.Correo_Acceso,p.WhatsApp,p.Verificado,p.Oficial].join(' ').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                const texto = [p.Nombre_Puesto,p.Rubro,p.Descripcion,p.Distrito,p.Provincia,p.Region,p.Duenio_Nombre,p.Correo_Acceso,p.WhatsApp,p.Oficial].join(' ').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
                 if (buscarEstrellas) return ratingMatch;
 if (q === 'oficial') {
     return puestoEstaOficial(p);
